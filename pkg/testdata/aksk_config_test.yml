@@ -1,0 +1,32 @@
+apiVersion: v1alpha1
+aws_access_key: xxxxxxxxx
+aws_secret_key: yyyyyyyyyyyyyy
+static:
+  - namespace: AWS/NetworkELB
+    name: my_loadbalancer_metric
+    regions:
+      - ap-northeast-1
+    dimensions:
+      - name: LoadBalancer
+        value: net/NSS-XXXXXXXXXXXX/xxxxxxxxx
+    metrics:
+      - name: ActiveFlowCount_TCP
+        statistics:
+          - Maximum
+        period: 60
+        length: 300
+      - name: NewFlowCount_TCP
+        statistics:
+          - Maximum
+        period: 60
+        length: 300
+      - name: TCP_Client_Reset_Count
+        statistics:
+          - Maximum
+        period: 60
+        length: 300
+      - name: TCP_ELB_Reset_Count
+        statistics:
+          - Maximum
+        period: 60
+        length: 300

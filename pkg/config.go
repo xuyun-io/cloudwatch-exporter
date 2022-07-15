@@ -14,10 +14,12 @@ const defaultLengthSeconds = int64(300)
 const defaultDelaySeconds = int64(300)
 
 type ScrapeConf struct {
-	ApiVersion string    `yaml:"apiVersion"`
-	StsRegion  string    `yaml:"sts-region"`
-	Discovery  Discovery `yaml:"discovery"`
-	Static     []*Static `yaml:"static"`
+	ApiVersion   string    `yaml:"apiVersion"`
+	StsRegion    string    `yaml:"sts-region"`
+	AWSAccessKey string    `yaml:"aws_access_key"`
+	AWSSecretKey string    `yaml:"aws_secret_key"`
+	Discovery    Discovery `yaml:"discovery"`
+	Static       []*Static `yaml:"static"`
 }
 
 type Discovery struct {

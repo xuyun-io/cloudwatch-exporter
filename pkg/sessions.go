@@ -8,6 +8,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/client"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -44,6 +45,8 @@ type SessionCache interface {
 
 type sessionCache struct {
 	stsRegion        string
+	awsAccessKey     string
+	awsSecretKey     string
 	session          *session.Session
 	endpointResolver endpoints.ResolverFunc
 	stscache         map[Role]stsiface.STSAPI
@@ -123,6 +126,8 @@ func NewSessionCache(config ScrapeConf, fips bool, logger Logger) SessionCache {
 
 	return &sessionCache{
 		stsRegion:        config.StsRegion,
+		awsAccessKey:     config.AWSAccessKey,
+		awsSecretKey:     config.AWSSecretKey,
 		session:          nil,
 		endpointResolver: endpointResolver,
 		stscache:         stscache,
@@ -167,7 +172,13 @@ func (s *sessionCache) Refresh() {
 
 	// sessions really only need to be constructed once at runtime
 	if s.session == nil {
-		s.session = createAWSSession(s.endpointResolver, s.logger.IsDebugEnabled())
+		var err error
+		if s.session, err = createAWSSession(s.endpointResolver,
+			s.awsAccessKey, s.awsSecretKey, s.stsRegion,
+			s.logger.IsDebugEnabled()); err != nil {
+
+			return
+		}
 	}
 
 	for role := range s.stscache {
@@ -194,6 +205,7 @@ func (s *sessionCache) Refresh() {
 
 	s.cleared = false
 	s.refreshed = true
+	return
 }
 
 func (s *sessionCache) GetSTS(role Role) stsiface.STSAPI {
@@ -321,22 +333,18 @@ func getAwsRetryer() aws.RequestRetryer {
 	}
 }
 
-func createAWSSession(resolver endpoints.ResolverFunc, isDebugEnabled bool) *session.Session {
-
+func createAWSSession(resolver endpoints.ResolverFunc, ak, sk, region string, debugEnable bool) (*session.Session, error) {
 	config := aws.Config{
+		Credentials:                   credentials.NewStaticCredentials(ak, sk, ""),
 		CredentialsChainVerboseErrors: aws.Bool(true),
 		EndpointResolver:              resolver,
 	}
-
-	if isDebugEnabled {
+	config.WithRegion(region)
+	if debugEnable {
 		config.LogLevel = aws.LogLevel(aws.LogDebugWithHTTPBody)
 	}
 
-	sess := session.Must(session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigEnable,
-		Config:            config,
-	}))
-	return sess
+	return session.NewSession(&config)
 }
 
 func createStsSession(sess *session.Session, role Role, region string, fips bool, isDebugEnabled bool) *sts.STS {
