@@ -1,0 +1,50 @@
+name: cloudwatch-exporter CICD
+# This workflow is triggered on pushes to the repository.
+on: push
+
+jobs:
+  build:
+    name: Go and Docker build
+    runs-on: ubuntu-latest
+    steps:
+      - name: "checkout go"
+        uses: actions/checkout@master
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@master
+        with:
+          args: ./…
+      - name: "manifest"
+        run:  echo `git log | grep commit | head -1 | cut -d" " -f2` > manifest
+      - uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: "build"
+        run: go build -o ./yace cmd/yace/main.go
+      - name: Login to ECR
+        id: ecr
+        uses: mlycore/ecr-login-action@master
+        with:
+          access_key: ${{ secrets.AWS_ACCESS_KEY }}
+          secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          region: ${{ secrets.AWS_REGION }}
+      - name: Publish cloudwatch exporter to ECR
+        uses: mlycore/Publish-Docker-Github-Action@master
+        with:
+          id: ecr_build_cloudwatch_exporter
+          name: 275106820702.dkr.ecr.ap-northeast-1.amazonaws.com/sre/cloudwatch-exporter
+          dockerfile: Dockerfile
+          username: ${{ steps.ecr.outputs.username }}
+          password: ${{ steps.ecr.outputs.password }}
+          registry: ${{ steps.ecr.outputs.registry }}
+      - name: Publish cloudwatch exporter to GCR
+        uses: mr-smithers-excellent/docker-build-push@v5
+        with:
+          image: starpay-308108/sre/cloudwatch-exporter
+          registry: gcr.io
+          username: _json_key
+          password: ${{ secrets.GCR_JSON_KEY }}
+          dockerfile: Dockerfile
+          tags: ${{ steps.ecr_build.outputs.tag }}
