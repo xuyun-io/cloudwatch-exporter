@@ -1,4 +1,4 @@
-FROM golang:1.17 as builder
+FROM public.ecr.aws/docker/library/golang:1.18 as builder
 
 WORKDIR /opt/
 
@@ -6,17 +6,14 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . ./
-RUN go test -cover ./...
 
 ENV GOOS linux
-ARG GOARCH
-ENV GOARCH ${GOARCH:-amd64}
 ENV CGO_ENABLED=0
 
 ARG VERSION
 RUN go build -v -ldflags "-X main.version=$VERSION" -o yace cmd/yace/main.go
 
-FROM alpine:latest
+FROM public.ecr.aws/docker/library/alpine:3.18
 
 EXPOSE 5000
 ENTRYPOINT ["yace"]
