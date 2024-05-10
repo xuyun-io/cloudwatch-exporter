@@ -23,28 +23,26 @@ jobs:
             ${{ runner.os }}-go-
       - name: "build"
         run: go build -o ./yace cmd/yace/main.go
-      - name: Login to ECR
-        id: ecr
-        uses: mlycore/ecr-login-action@master
+      - name: "Login to Docker Hub"
+        uses: docker/login-action@v3
         with:
-          access_key: ${{ secrets.AWS_ACCESS_KEY }}
-          secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          region: ${{ secrets.AWS_REGION }}
-      - name: Publish cloudwatch exporter to ECR
-        uses: mlycore/Publish-Docker-Github-Action@master
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: "manifest"
+        run: echo `git log | grep commit | head -1 | cut -d" " -f2` > manifest
+      - name: Cache Docker layers
+        uses: actions/cache@v2
         with:
-          id: ecr_build_cloudwatch_exporter
-          name: 275106820702.dkr.ecr.ap-northeast-1.amazonaws.com/sre/cloudwatch-exporter
+          path: /tmp/.buildx-cache-${{ matrix.platform }}
+          key: ${{ runner.os }}-buildx-${{ github.sha }}-${{ matrix.platform }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-${{ matrix.platform }}
+      - name: "Build and Push rds-exporter Image"
+        uses: elgohr/Publish-Docker-Github-Action@v5
+        with:
+          name: kubestar/cloudwatch-exporter
           dockerfile: Dockerfile
-          username: ${{ steps.ecr.outputs.username }}
-          password: ${{ steps.ecr.outputs.password }}
-          registry: ${{ steps.ecr.outputs.registry }}
-      - name: Publish cloudwatch exporter to GCR
-        uses: mr-smithers-excellent/docker-build-push@v5
-        with:
-          image: starpay-308108/sre/cloudwatch-exporter
-          registry: gcr.io
-          username: _json_key
-          password: ${{ secrets.GCR_JSON_KEY }}
-          dockerfile: Dockerfile
-          tags: ${{ steps.ecr_build.outputs.tag }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          platforms: linux/arm64
+          tags: "v1.0.0"
