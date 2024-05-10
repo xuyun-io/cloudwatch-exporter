@@ -22,6 +22,9 @@ CMD ["--config.file=/tmp/config.yml"]
 WORKDIR /exporter/
 
 
-RUN apk --no-cache add ca-certificates
+RUN apk update && \
+    apk add ca-certificates && \
+    update-ca-certificates
+
 COPY --from=builder /opt/yace /usr/local/bin/yace
 USER exporter
