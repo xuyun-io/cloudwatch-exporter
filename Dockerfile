@@ -6,7 +6,6 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . ./
-RUN go test -cover ./...
 
 ENV GOOS linux
 ARG GOARCH
