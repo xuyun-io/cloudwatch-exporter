@@ -18,8 +18,6 @@ FROM public.ecr.aws/docker/library/alpine:3.18
 EXPOSE 5000
 ENTRYPOINT ["yace"]
 CMD ["--config.file=/tmp/config.yml"]
-RUN addgroup -g 1000 exporter && \
-    adduser -u 1000 -D -G exporter exporter -h /exporter
 
 WORKDIR /exporter/
 
