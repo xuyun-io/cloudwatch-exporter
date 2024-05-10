@@ -16,6 +16,6 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
     - name: Tag docker image arm
-      run: docker tag yace-arm64 kubestar/loudwatch-exporter:support-docker-arm-2024-05-10-arm64
+      run: docker tag yace-arm64 kubestar/cloudwatch-exporter:support-docker-arm-2024-05-10-arm64
     - name: Publish docker image arm64
       run: docker push kubestar/cloudwatch-exporter:support-docker-arm-2024-05-10-arm64
