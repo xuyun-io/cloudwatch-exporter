@@ -13,7 +13,7 @@ ENV CGO_ENABLED=0
 ARG VERSION
 RUN go build -v -ldflags "-X main.version=$VERSION" -o yace cmd/yace/main.go
 
-FROM public.ecr.aws/docker/library/alpine:3.18
+FROM arm64v8/alpine:latest
 
 EXPOSE 5000
 ENTRYPOINT ["yace"]
